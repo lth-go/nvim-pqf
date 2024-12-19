@@ -20,6 +20,7 @@ local type_mapping = {
 local namespace = api.nvim_create_namespace('pqf')
 local max_filename_length = 0
 local filename_truncate_prefix = '[...]'
+local path_display = nil
 
 local function pad_left(s, pad_to)
   if pad_to == 0 then
@@ -51,6 +52,11 @@ end
 
 local function trim_path(path)
   local fname = fn.fnamemodify(path, ':p:.')
+
+  if path_display then
+    fname = path_display(fname)
+  end
+
   local len = fn.strchars(fname)
 
   if max_filename_length > 0 and len > max_filename_length then
@@ -85,8 +91,8 @@ function M.format(info)
   local list = list_items(info)
   local qf_bufnr = list.qfbufnr
   local raw_items = list.items
-  local items = {}
 
+  local items = {}
   local show_sign = false
   local pad_to = 0
   local num_pad_to = 0
@@ -229,7 +235,7 @@ function M.format(info)
       line = line .. '|' .. pad_left(item.lnum, num_pad_to) .. '|'
 
       table.insert(highlights, {
-        group = 'Number',
+        group = 'LineNr',
         line = line_idx,
         col = col,
         end_col = col + num_pad_to + 2,
@@ -288,6 +294,14 @@ function M.setup(opts)
     assert(
       type(filename_truncate_prefix) == 'string',
       'the "filename_truncate_prefix" option must be a string'
+    )
+  end
+
+  if opts.path_display then
+    path_display = opts.path_display
+    assert(
+      type(path_display) == 'function',
+      'the "path_display" option must be a function'
     )
   end
 
